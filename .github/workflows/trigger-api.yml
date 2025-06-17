@@ -9,19 +9,29 @@ jobs:
     if: "!contains(github.event.head_commit.message, '[skip tests]')"
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger automation-scripts-api repo
-        uses: peter-evans/repository-dispatch@v3
-        with:
+     - name: Extract dispatch event name from commit message
+       id: extract_event
+       run: |
+          message="${{ github.event.head_commit.message }}"
+          if [[ "$message" =~ \[trigger:([a-zA-Z0-9_-]+)\] ]]; then
+            echo "event_name=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+          else
+            echo "event_name=run-automation-tests" >> $GITHUB_OUTPUT
+          fi
+          
+     - name: Trigger automation-scripts-api repo
+       uses: peter-evans/repository-dispatch@v3
+       with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           repository: Jitenderkr2791/automation-scripts-api
-          event-type: run-automation-tests
+          event-type: ${{ steps.extract_event.outputs.event_name }}
           
-      - name: Wait for 30 seconds to allow the workflow to start
-        run: sleep 30
+     - name: Wait for 30 seconds to allow the workflow to start
+       run: sleep 30
 
-      - name: Poll triggered workflow status
-        uses: actions/github-script@v7
-        with:
+     - name: Poll triggered workflow status
+       uses: actions/github-script@v7
+       with:
           github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           script: |
             const owner = 'jitenderkr2791';
