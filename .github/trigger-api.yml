@@ -13,6 +13,6 @@ jobs:
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-          repository: nurture-with-care/automation-scripts-api
+          repository: Jitenderkr2791/automation-scripts-api
           event-type: run-automation-tests
  
