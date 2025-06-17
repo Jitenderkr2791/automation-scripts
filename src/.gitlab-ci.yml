@@ -1,0 +1,38 @@
+image: maven:3.9.4-eclipse-temurin-17
+
+stages:
+  - test
+
+variables:
+  DISPLAY: ":99"
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+
+cache:
+  paths:
+    - .m2/repository
+
+before_script:
+  - apt-get update
+  - apt-get install -y wget gnupg2 software-properties-common curl unzip xvfb
+  # Install Google Chrome securely
+  - curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-linux-keyring.gpg
+  - echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
+  - apt-get update
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y google-chrome-stable
+  - google-chrome-stable --version
+  # Start virtual display
+  - Xvfb :99 -ac &
+
+test:
+  stage: test
+  script:
+    - echo "Running tests on Chrome (headless via WebDriverManager)"
+    - mkdir -p target/allure-results
+    - mvn clean test -DbrowserName=chrome -DuseWebdriverManager=true -DrunHeadless=false
+  artifacts:
+    when: always
+    paths:
+      - target/cucumber-reports/
+      - target/allure-results/
+      - target/site/allure-maven-plugin/
+    expire_in: 1 week
