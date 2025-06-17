@@ -16,3 +16,36 @@ jobs:
           repository: Jitenderkr2791/automation-scripts-api
           event-type: run-automation-tests
  
+      - name: Wait for 30 seconds (allow job to start)
+        run: sleep 30
+
+      - name: Fetch latest workflow status from automation-scripts-api
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          script: |
+            const owner = 'jitenderkr2791';
+            const repo = 'automation-scripts-api';
+            const workflowName = 'API Test Workflow'; // 👈 update this
+
+            const runs = await github.rest.actions.listWorkflowRunsForRepo({
+              owner,
+              repo,
+              per_page: 5
+            });
+
+            const workflowRun = runs.data.workflow_runs.find(
+              run => run.name === workflowName && run.event === 'repository_dispatch'
+            );
+
+            if (!workflowRun) {
+              core.setFailed('No recent workflow run found from repository_dispatch.');
+            } else {
+              core.info(`Workflow Run ID: ${workflowRun.id}`);
+              core.info(`Status: ${workflowRun.status}`);
+              core.info(`Conclusion: ${workflowRun.conclusion}`);
+
+              if (workflowRun.conclusion !== 'success') {
+                core.setFailed(`Workflow failed with conclusion: ${workflowRun.conclusion}`);
+              }
+            }
